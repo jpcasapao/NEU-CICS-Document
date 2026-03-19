@@ -1,16 +1,16 @@
 # CICS Vault — Document Repository System
 ### New Era University · College of Information and Computer Studies
-
+ 
 ---
-
+ 
 ## Overview
-
+ 
 CICS Vault is a secure, web-based document repository system built for the College of Information and Computer Studies (CICS) at New Era University. It provides a centralized platform where students can access official CICS documents such as syllabi, theses, forms, guidelines, and announcements — all secured behind NEU institutional login.
-
+ 
 ---
-
+ 
 ## Tech Stack
-
+ 
 | Layer | Technology |
 |---|---|
 | Frontend | React (Next.js 14) |
@@ -18,20 +18,20 @@ CICS Vault is a secure, web-based document repository system built for the Colle
 | Database | Firestore (Firebase) |
 | File Storage | Supabase Storage |
 | Styling | Tailwind CSS + Custom CSS |
-| Deployment | Vercel |
-
+| Deployment | Firebase Hosting |
+ 
 ---
-
+ 
 ## Features
-
+ 
 ### 🔐 Authentication
 - Google Sign-In only
 - Restricted to `@neu.edu.ph` email addresses
 - Non-NEU accounts are automatically signed out with an error message
 - Pre-registered admin accounts are assigned admin role on first login
-
+ 
 ### 👤 User Roles
-
+ 
 #### Student
 - Login with NEU Google account
 - On first login: must select undergraduate program (CS, IT, IS, EMC)
@@ -39,7 +39,7 @@ CICS Vault is a secure, web-based document repository system built for the Colle
 - Filter documents by Program, Category, and Year
 - Download PDFs (if account is not blocked)
 - View recently uploaded documents on the Home dashboard
-
+ 
 #### Admin
 - All student capabilities
 - Upload PDF documents to Supabase Storage
@@ -50,11 +50,11 @@ CICS Vault is a secure, web-based document repository system built for the Colle
 - Filter analytics by Daily, Weekly, Monthly, or Custom date range
 - View Audit History (who downloaded what and when)
 - Switch between Admin and Student view
-
+ 
 ---
-
+ 
 ## Project Structure
-
+ 
 ```
 cics-repo4/
 ├── app/
@@ -79,11 +79,11 @@ cics-repo4/
 ├── package.json
 └── README.md
 ```
-
+ 
 ---
-
+ 
 ## Firestore Database Structure
-
+ 
 ### `users` collection
 ```json
 {
@@ -97,7 +97,7 @@ cics-repo4/
   "createdAt": "timestamp"
 }
 ```
-
+ 
 ### `documents` collection
 ```json
 {
@@ -111,7 +111,7 @@ cics-repo4/
   "createdAt": "timestamp"
 }
 ```
-
+ 
 ### `logs` collection (download logs)
 ```json
 {
@@ -120,7 +120,7 @@ cics-repo4/
   "timestamp": "timestamp"
 }
 ```
-
+ 
 ### `logins` collection (login tracking)
 ```json
 {
@@ -129,24 +129,24 @@ cics-repo4/
   "timestamp": "timestamp"
 }
 ```
-
+ 
 ---
-
+ 
 ## Supabase Storage
-
+ 
 - **Bucket name:** `cics-documents`
 - **Bucket type:** Public
 - **File path:** `{timestamp}-{filename}.pdf`
 - **Policies:**
   - `Allow public read` — SELECT for public
   - `Allow auth upload` — INSERT for authenticated users
-
+ 
 ---
-
+ 
 ## Environment Variables
-
+ 
 Create a `.env.local` file in the root with:
-
+ 
 ```env
 # Firebase
 NEXT_PUBLIC_FIREBASE_API_KEY=
@@ -156,16 +156,16 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=
-
+ 
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
-
+ 
 ---
-
+ 
 ## Firestore Security Rules
-
+ 
 ```js
 rules_version = '2';
 service cloud.firestore {
@@ -196,17 +196,17 @@ service cloud.firestore {
   }
 }
 ```
-
+ 
 ---
-
+ 
 ## Pre-Registering Admin Accounts
-
+ 
 To pre-register an admin before their first login:
-
+ 
 1. Go to **Firebase Console → Firestore → users collection**
 2. Click **Add document** → use a descriptive Document ID (e.g. `jcesperanza-admin`)
 3. Add these fields:
-
+ 
 | Field | Type | Value |
 |---|---|---|
 | `email` | string | `admin@neu.edu.ph` |
@@ -214,38 +214,76 @@ To pre-register an admin before their first login:
 | `role` | string | `admin` |
 | `program` | string | `CS` |
 | `isBlocked` | boolean | `false` |
-
+ 
 4. When the admin logs in for the first time, the system automatically finds their pre-registered document by email, assigns their real Firebase UID, and redirects them to the Admin panel.
-
+ 
 ---
-
+ 
 ## Local Development
-
+ 
 ```bash
 # Install dependencies
 npm install --legacy-peer-deps
-
+ 
 # Run development server
 npm run dev
 ```
-
+ 
 Open [http://localhost:3000](http://localhost:3000)
-
+ 
 ---
-
-## Deployment (Vercel)
-
-1. Push project to GitHub
-2. Go to [vercel.com](https://vercel.com) → Import project
-3. Add all `.env.local` variables in Vercel dashboard under **Environment Variables**
-4. Deploy
-5. Go to **Firebase Console → Authentication → Authorized domains**
-6. Add your Vercel domain (e.g. `cics-vault.vercel.app`)
-
+ 
+## Deployment (Firebase Hosting)
+ 
+1. Install Firebase CLI:
+```bash
+npm install -g firebase-tools
+```
+ 
+2. Login to Firebase:
+```bash
+firebase login
+```
+ 
+3. Initialize hosting:
+```bash
+firebase init hosting
+```
+- Public directory: `out`
+- Configure as single-page app: `No`
+- Set up automatic builds with GitHub: `No`
+ 
+4. Update `next.config.js` to enable static export:
+```js
+const nextConfig = {
+  output: "export",
+  webpack: (config) => {
+    config.externals = [...(config.externals || []), { undici: "undici" }];
+    return config;
+  },
+};
+module.exports = nextConfig;
+```
+ 
+5. Build the project:
+```bash
+npm run build
+```
+ 
+6. Deploy:
+```bash
+firebase deploy --only hosting
+```
+ 
+7. Go to **Firebase Console → Authentication → Authorized domains**
+8. Add your Firebase Hosting URL (e.g. `document-app-6d5a4.web.app`)
+ 
+**Live URL:** `https://document-app-6d5a4.web.app`
+ 
 ---
-
+ 
 ## User Flow
-
+ 
 ```
 Login Page
     ↓
@@ -257,11 +295,11 @@ Check Firestore by UID
             ├── Found → Create UID document → Admin Panel
             └── Not found → Setup Page (pick program) → Student Dashboard
 ```
-
+ 
 ---
-
+ 
 ## Document Upload Flow (Admin)
-
+ 
 ```
 Admin selects PDF file
     ↓
@@ -273,11 +311,11 @@ Document metadata saved to Firestore (title, category, program, fileURL, storage
     ↓
 Document appears in Student Library
 ```
-
+ 
 ---
-
+ 
 ## Download Flow (Student)
-
+ 
 ```
 Student clicks Download
     ↓
@@ -287,22 +325,22 @@ Check isBlocked status
                         ↓
                     Open PDF in new tab
 ```
-
+ 
 ---
-
+ 
 ## Programs Supported
-
+ 
 | Code | Full Name |
 |---|---|
 | CS | BS Computer Science |
 | IT | BS Information Technology |
 | IS | BS Information Systems |
 | EMC | BS Entertainment & Multimedia Computing |
-
+ 
 ---
-
+ 
 ## Document Categories
-
+ 
 - Announcement
 - Form
 - Guideline
@@ -310,7 +348,7 @@ Check isBlocked status
 - Syllabus
 - Thesis
 - Others
-
+ 
 ---
-
+ 
 *Built for New Era University — CICS Department · 2025–2026*
